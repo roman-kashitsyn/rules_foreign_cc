@@ -19,6 +19,7 @@ ToolInfo = provider(
             "If the tool is built as part of the build, the corresponding build target, which should produce " +
             "the tree artifact with the binary to call."
         ),
+        "data": "Additional data dependencies of the tool.",
     },
 )
 
@@ -27,15 +28,16 @@ def _native_tool_toolchain_impl(ctx):
         fail("Either path or target (and path) should be defined for the tool.")
     path = None
     if ctx.attr.target:
-        path = ctx.expand_location(ctx.attr.path, targets = [ctx.attr.target])
-        env = expand_locations_and_make_variables(ctx, ctx.attr.env, "env", [ctx.attr.target])
+        path = ctx.expand_location(ctx.attr.path, targets = [ctx.attr.target] + ctx.attr.data)
+        env = expand_locations_and_make_variables(ctx, ctx.attr.env, "env", [ctx.attr.target] + ctx.attr.data)
     else:
-        path = ctx.expand_location(ctx.attr.path)
-        env = expand_locations_and_make_variables(ctx, ctx.attr.env, "env", [])
+        path = ctx.expand_location(ctx.attr.path, ctx.attr.data)
+        env = expand_locations_and_make_variables(ctx, ctx.attr.env, "env", ctx.attr.data)
     return platform_common.ToolchainInfo(data = ToolInfo(
         env = env,
         path = path,
         target = ctx.attr.target,
+        data = ctx.attr.data,
     ))
 
 native_tool_toolchain = rule(
@@ -67,6 +69,11 @@ native_tool_toolchain = rule(
                 "If the tool is built as part of the build, the corresponding build target, " +
                 "which should produce the tree artifact with the binary to call."
             ),
+        ),
+        "data": attr.label_list(
+            mandatory = False,
+            allow_files = True,
+            doc = "Additional data dependencies of the tool.",
         ),
     },
     incompatible_use_toolchain_transition = True,

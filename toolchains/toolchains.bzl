@@ -21,13 +21,13 @@ def preinstalled_toolchains():
 def _current_toolchain_impl(ctx):
     toolchain = ctx.toolchains[ctx.attr._toolchain]
 
+    runfiles = toolchain.data.target.default_runfiles
+    runfiles.merge_all([d.default_runfiles for d in toolchain.data.data])
     if toolchain.data.target:
         return [
             toolchain,
             platform_common.TemplateVariableInfo(toolchain.data.env),
-            DefaultInfo(
-                runfiles = toolchain.data.target.default_runfiles,
-            ),
+            DefaultInfo(runfiles = runfiles),
         ]
     return [
         toolchain,
